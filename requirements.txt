@@ -1,0 +1,5 @@
+finnhub-python
+google-adk
+mcp
+python-dotenv
+termcolor
