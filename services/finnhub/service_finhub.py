@@ -14,20 +14,17 @@ class FinnHubService:
         """ init finnhub service """
         self.client = finnhub.Client(api_key=os.getenv("API_KEY_FINNHUB"))
 
-    def get_symbol_from_query(self, query: str) -> Dict[str,Any]:
+    def symbol_lookup(self, query: str) -> Dict[str,Any]:
         """
-        Get the symbol of a stock from a query. This is useful if you have no idea about the symbol.
+        Get the symbol of a stock from a query; useful if symbol is not known.
         :param query: name of company
         :return: response dict contains description, displaySymbol, symbol, type
         """
+        return self.client.symbol_lookup(query=query)
 
-        return self.client.symbol_lookup(
-            query=query,
-        )
-
-    def get_price_of_stock(self, symbol: str) -> Dict[str,Any]:
+    def get_symbol_quote(self, symbol: str) -> Dict[str,Any]:
         """
-        Get live price of stock
+        Get live stock price via finnhub API.
         :param symbol: stock symbol, e.g. QQQM
         :return: response dict contains current_price, change, percentage_change, day_high, day_low, day_open_price, previous_close_pricem, timestamp, timestamp_bson
         """
@@ -46,5 +43,5 @@ class FinnHubService:
 
 if __name__ == "__main__":
     service = FinnHubService()
-    print(json.dumps(service.get_symbol_from_query("mongodb"), indent=2))
-    print(json.dumps(service.get_price_of_stock("QQQM"), indent=2, default=str))
+    print(json.dumps(service.symbol_lookup("mongodb"), indent=2))
+    print(json.dumps(service.get_symbol_quote("QQQM"), indent=2, default=str))
