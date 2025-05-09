@@ -1,0 +1,10 @@
+*.env
+.venv
+data
+
+.pyc
+__pycache*
+__pycache__/
+
+chroma_db/
+mongo-data/
