@@ -63,7 +63,7 @@ The Streamable HTTP transport replaces the earlier SSE approach and allows the M
 
 The choice between stdio and Streamable HTTP depends on the specific requirements of your application:
 
-- STDIO: Best for local, high-performance use cases where low latency and simplicity are paramount. Ideal for command-line interace and same-machine implementations
+- STDIO: Best for local, high-performance use cases where low latency and simplicity are paramount. Ideal for command-line interace and single-host implementations
 
 - Streamable HTTP: Ideal for remote or distributed applications requiring broader accessibility and compatibility with web technologies.
 

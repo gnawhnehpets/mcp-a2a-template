@@ -1,7 +1,7 @@
 from mcp.server.fastmcp import FastMCP
 from services.search.service_search_google import SearchServiceSerper
 
-mcp = FastMCP("google search", "1.0.0", "Search for google using the Serper API")
+mcp = FastMCP("google search") #, "1.0.0", "Search for google using the Serper API")
 
 search_service = SearchServiceSerper()
 
