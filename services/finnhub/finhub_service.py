@@ -1,11 +1,11 @@
+from datetime import datetime, timezone
+import json
 import os
 from typing import Dict, Any
 
 import finnhub
-from dotenv import load_dotenv, find_dotenv
-import json
-from datetime import datetime, timezone
 
+from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
 
 # https://github.com/Finnhub-Stock-API/finnhub-python
