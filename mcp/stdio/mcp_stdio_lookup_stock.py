@@ -1,9 +1,9 @@
 from mcp.server.fastmcp import FastMCP
-from services.finnhub.service_finhub import FinnHubService
+from services.stock.service_stock_finhub import StockServiceFinnhub
 
 mcp = FastMCP("stock search", "1.0.0", "Search for stocks using the FinHub API")
 
-finnhub_service = FinnHubService()
+finnhub_service = StockServiceFinnhub()
 
 @mcp.tool()
 def lookup_symbol(query: str) -> dict:
