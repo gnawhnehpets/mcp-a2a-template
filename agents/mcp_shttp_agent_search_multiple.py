@@ -17,37 +17,36 @@ load_dotenv(find_dotenv())
 from pathlib import Path
 ROOT_DIR = Path(__file__).resolve().parents[1]
 
-MCP_SERVER_DIR = ROOT_DIR / "mcp_server" / "stdio"
+MCP_SERVER_DIR = ROOT_DIR / "mcp" / "stdio"
 SEARCH_SCRIPT = MCP_SERVER_DIR / "mcp_stdio_search_google.py"
 VENV_PYTHON = ROOT_DIR / ".venv" / "bin" / "python3"
 os.environ["GOOGLE_API_KEY"] = os.getenv("API_KEY_GOOGLE")
 
 MODEL='gemini-2.5-pro-exp-03-25'
-APP_NAME='enterprise_assistant'
+APP_NAME='enterprise_analysis'
 USER_ID='user_stephen'
 SESSION_ID='session_stephen'
 
 async def async_main():
-    print(colored(text=">> Initializing ADK agent...", color='blue'))
-    session_service = InMemorySessionService()    
-    artifact_service = InMemoryArtifactService()
+    service_session = InMemorySessionService()
+    service_artifacts = InMemoryArtifactService()
     
     print(colored(text=">> Creating session...", color='blue'))
     session = session_service.create_session(
         state={},
         app_name=APP_NAME,
         user_id=USER_ID,
-        session_id=SESSION_ID
+        session_id=SESSION_ID,
     )
 
     query = input("Enter your query:\n")
     content = types.Content(role='user', parts=[types.Part(text=query)])
 
-    print(colored(text=">> Initializing tools from MCP servers...", color='blue'))
+    print(">> Initializing tools from MCP servers...")
     search_tools, search_exit_stack = await return_sse_mcp_tools_search()
     stocks_tools, stocks_exit_stack = await return_sse_mcp_tools_stocks()
 
-    print(colored(text=">> Initializing agents...", color='blue'))
+    print(">> Initializing agents...")
     agent_analyze_stock = Agent(
         model=MODEL,
         name="agent_stock_analysis",
@@ -82,15 +81,15 @@ async def async_main():
         output_key="last_assistant_response",
     )
 
-    print(colored(text=">> Create agent pipeline...", color='blue'))
+    print(">> Create agent pipeline...")
     runner = Runner(
         app_name=APP_NAME,
         agent=root_agent,
-        artifact_service=artifact_service,
-        session_service=session_service
+        artifact_service=service_artifacts,
+        session_service=service_session,
     )
 
-    print(colored(text=">> Running agent...", color='blue'))
+    print(">> Running agent...")
     events_async = runner.run_async(session_id=session.id, user_id=session.user_id, new_message=content)
 
     async for event in events_async:
@@ -105,7 +104,7 @@ async def async_main():
             print(event)
 
 
-    print(colored(text=">> Closing MCP server connection...", color='blue'))
+    print(">> closing MCP server connection...")
     await stocks_exit_stack.aclose()
     await search_exit_stack.aclose()
 

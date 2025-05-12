@@ -16,25 +16,26 @@ print(f">> ROOT_DIR: {ROOT_DIR}")
 print(f">> MCP_SERVER_DIR: {MCP_SERVER_DIR}")
 print(f">> SEARCH_SCRIPT: {SEARCH_SCRIPT}")
 
+
 async def return_mcp_tools_stocks():
-    print(">> Attempting to connect to MCP server for search and page read...")
+    print(">> Connecting to MCP server (stock_stdio)...")
     tools, stack = await MCPToolset.from_server(
         connection_params=StdioServerParameters(
             command=str(VENV_PYTHON),
             args=[str(SEARCH_SCRIPT)],
             env={
                 "MCP_PORT":"8001",
-                "PYTHONPATH": f"{ROOT_DIR}:${{PYTHONPATH}}"
+                "PYTHONPATH": "/Users/tsadoq/gits/a2a-mcp-tutorial:${PYTHONPATH}"
             }
         )
     )
-    print(">> MCP toolset created successfully.")
+    print(">> MCPToolset created successfully.")
     return tools, stack
 
 
 async def return_sse_mcp_tools_stocks():
-    print(">> Attempting to connect to MCP server for stock info...")
+    print(">> Connecting to MCP server (stock_sse)...")
     server_params = SseServerParams(url="http://localhost:8181/sse")
     tools, stack = await MCPToolset.from_server(connection_params=server_params)
-    print(">> MCP toolset created successfully.")
+    print(">> MCPToolset created successfully.")
     return tools, stack
