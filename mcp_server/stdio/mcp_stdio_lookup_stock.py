@@ -1,7 +1,7 @@
 from mcp.server.fastmcp import FastMCP
 from services.stock.service_stock_finhub import StockServiceFinnhub
 
-mcp = FastMCP("stock search", "1.0.0", "Search for stocks using the FinHub API")
+mcp = FastMCP("stock search")
 
 finnhub_service = StockServiceFinnhub()
 
