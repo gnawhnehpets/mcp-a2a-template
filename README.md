@@ -68,3 +68,21 @@ The choice between stdio and Streamable HTTP depends on the specific requirement
 - Streamable HTTP: Ideal for remote or distributed applications requiring broader accessibility and compatibility with web technologies.
 
 By selecting the appropriate transport mechanism, developers can optimize the performance and accessibility of their MCP implementations.
+
+
+**Running the MCP server**
+To run the MCP server and client code, you can use the following command:
+
+```bash
+PYTHONPATH=. python3 mcp_server/shttp/mcp_shttp_search_google.py
+PYTHONPATH=. python3 mcp_server/shttp/mcp_shttp_lookup_stock.py
+# In a separate terminal, run the client code
+python3 agents/mcp_shttp_agent_search_multiple.py 
+```
+
+This command starts the MCP server, which listens for incoming requests and processes them according to the specified transport mechanism (either stdio or Streamable HTTP). The server will handle incoming messages, execute the requested operations, and return the results to the client.
+
+Then, you can run the client code to interact with the MCP server. The client will send requests to the server, and the server will respond with the appropriate results based on the operations defined in the MCP protocol.
+
+The MCP server is designed to be flexible and extensible, allowing developers to customize its behavior and add new functionalities as needed. You can modify the server code to implement additional features or integrate it with other systems, depending on your specific use case.
+

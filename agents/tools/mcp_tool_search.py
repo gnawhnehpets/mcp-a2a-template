@@ -3,6 +3,10 @@ import os
 from google.adk.tools.mcp_tool import MCPToolset
 from google.adk.tools.mcp_tool.mcp_toolset import SseServerParams
 from mcp import StdioServerParameters
+from dotenv import load_dotenv, find_dotenv
+load_dotenv(find_dotenv())
+
+os.environ["GOOGLE_API_KEY"] = os.getenv("API_KEY_GOOGLE")
 
 from pathlib import Path
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -10,7 +14,6 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 MCP_SERVER_DIR = ROOT_DIR / "mcp_server" / "shttp"
 SEARCH_SCRIPT = MCP_SERVER_DIR / "mcp_shttp_search_google.py"
 VENV_PYTHON = ROOT_DIR / ".venv" / "bin" / "python3"
-os.environ["GOOGLE_API_KEY"] = os.getenv("API_KEY_GOOGLE")
 
 print(f">> ROOT_DIR: {ROOT_DIR}")
 print(f">> MCP_SERVER_DIR: {MCP_SERVER_DIR}")
