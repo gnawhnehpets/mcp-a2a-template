@@ -5,7 +5,9 @@ from google.adk import Agent, Runner
 from google.adk.artifacts import InMemoryArtifactService
 from google.adk.sessions import InMemorySessionService
 from google.genai import types
+from google.generativeai import GenerativeModel # For type hinting if needed
 
+from agents.utils.agent_retry import RetryableGoogleLLM
 from tools.mcp_tool_stocks import return_sse_mcp_tools_stocks
 from tools.mcp_tool_search import return_sse_mcp_tools_search
 
@@ -48,8 +50,13 @@ async def async_main():
     stocks_tools, stocks_exit_stack = await return_sse_mcp_tools_stocks()
 
     print(colored(text=">> Initializing agents...", color='blue'))
+
+    # Create LLM client instances with retry logic
+    # GOOGLE_API_KEY is already set in the environment by this script
+    retryable_llm_client = RetryableGoogleLLM(model_name=MODEL)
+
     agent_analyze_stock = Agent(
-        model=MODEL,
+        llm_client=retryable_llm_client, # Use the retryable client
         name="agent_stock_analysis",
         instruction="Perform in-depth analysis of stock data and return key financial insights, including the latest market price.",
         description="Specializes in analyzing stock market data and generating financial insights. Retrieves and reports on the most recent stock prices.",
@@ -57,17 +64,17 @@ async def async_main():
     )
 
     agent_search_google = Agent(
-        model=MODEL,
+        llm_client=retryable_llm_client, # Use the retryable client
         name="agent_search_google",
-        instruction="Conduct web searches using Google and extract relevant information from online sources.",
-        description="Handles open-ended queries by performing Google searches and reading content from web pages.",
+        instruction="First, use 'search_google' to find relevant web pages for the user's query. If initial search results are sufficient, summarize them. If more detail is needed, use 'get_page_text' on the most promising URLs (up to 2-3 pages). Consolidate all gathered information into a single, comprehensive answer. Avoid making separate responses for each piece of information. Your goal is to provide a complete answer in one go after gathering and processing all necessary information.",
+        description="Handles open-ended queries by performing Google searches, reading content from web pages, and synthesizing the information.",
         tools=search_tools
     )
 
     # Create the root agent with sub-agents; delegates tasks to the appropriate sub-agent based on user query
     root_agent = Agent(
         name=APP_NAME,
-        model=MODEL,
+        llm_client=retryable_llm_client, # Use the retryable client for the root agent as well
         description="Root assistant: Handles requests about stocks and information of companies.",
         instruction=(
         "You are the primary assistant orchestrating a team of expert agents to fulfill user requests regarding companies and stock performance.\n"

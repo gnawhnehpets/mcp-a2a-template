@@ -3,3 +3,4 @@ google-adk
 mcp
 python-dotenv
 termcolor
+google-generativeai
