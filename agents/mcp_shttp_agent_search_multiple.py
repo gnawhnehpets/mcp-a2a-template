@@ -9,6 +9,7 @@ from google.generativeai import GenerativeModel # For type hinting if needed
 
 from tools.mcp_tool_stocks import return_sse_mcp_tools_stocks
 from tools.mcp_tool_search import return_sse_mcp_tools_search
+from agents.tools.mcp_tool_health_check import return_sse_mcp_tools_health_check # Import new health check tool
 
 from termcolor import colored
 
@@ -47,6 +48,7 @@ async def async_main():
     print(colored(text=">> Initializing tools from MCP servers...", color='blue'))
     search_tools, search_exit_stack = await return_sse_mcp_tools_search()
     stocks_tools, stocks_exit_stack = await return_sse_mcp_tools_stocks()
+    health_check_tools, health_check_exit_stack = await return_sse_mcp_tools_health_check() # Initialize health check tool
 
     print(colored(text=">> Initializing agents...", color='blue'))
 
@@ -77,17 +79,20 @@ async def async_main():
     root_agent = Agent(
         name=APP_NAME,
         model=MODEL, # Use the model name directly
-        description="Root assistant: Handles requests about stocks and information of companies.",
+        description="Root assistant: Handles requests about stocks, company information, and user well-being by first performing a mental health check.",
         instruction=(
-        "You are the primary assistant orchestrating a team of expert agents to fulfill user requests regarding companies and stock performance.\n"
-        "Responsibilities:\n"
-        "1. Provide comprehensive reports on companies when requested.\n"
-        "2. For stock price or market trend insights, delegate to 'agent_stock_analysis'.\n"
-        "3. For general or real-time information, delegate to 'agent_search_google'.\n"
-        "Carefully interpret the user’s intent, decide whether to handle the request directly or delegate it, and respond accordingly.\n"
-        "When uncertain, ask the user for clarification. Only use tools or delegate tasks as defined."
-    ),
-        sub_agents=[agent_search_google, agent_analyze_stock],
+            "You are the primary assistant orchestrating a team of expert agents. Your process for EVERY user query is:\n"
+            "1. **Mental Health Check (ALWAYS Perform First):** Use your 'perform_mental_health_check' tool with the original user query to assess for potential mental health concerns. Store this assessment.\n"
+            "2. **Address Primary Request:** After the health check, proceed to address the user's main query. This may involve:\n"
+            "    a. Providing comprehensive reports on companies directly if the information is straightforward.\n"
+            "    b. For stock price or market trend insights, delegate to 'agent_stock_analysis'.\n"
+            "    c. For general or real-time information, delegate to 'agent_search_google'.\n"
+            "3. **Formulate Final Response:** Consolidate all information. If the 'perform_mental_health_check' tool indicated a concern, its supportive message MUST be included prominently and respectfully at the BEGINNING of your overall response. Then, provide the answer to the user's primary request based on step 2.\n"
+            "Carefully interpret the user’s intent for step 2, decide whether to handle it directly or delegate, and respond accordingly.\n"
+            "When uncertain about step 2, ask the user for clarification. Only use tools or delegate tasks as defined."
+        ),
+        tools=health_check_tools.tools, # Add health check tool to root agent
+        sub_agents=[agent_search_google, agent_analyze_stock], # Keep existing sub-agents
         output_key="last_assistant_response",
     )
 
@@ -117,6 +122,7 @@ async def async_main():
     print(colored(text=">> Closing MCP server connection...", color='blue'))
     await stocks_exit_stack.aclose()
     await search_exit_stack.aclose()
+    await health_check_exit_stack.aclose() # Close health check exit stack
 
 
 if __name__ == '__main__':
