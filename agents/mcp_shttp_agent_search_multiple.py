@@ -41,7 +41,8 @@ async def async_main():
         session_id=SESSION_ID
     )
 
-    query = input("Enter your query:\n")
+    # Color the query prompt
+    query = input(colored(text=">> Enter your query:\n", color='magenta'))
     content = types.Content(role='user', parts=[types.Part(text=query)])
 
     print(colored(text=">> Initializing tools from MCP servers...", color='blue'))
@@ -51,9 +52,9 @@ async def async_main():
     print(colored(text=">> Initializing agents...", color='blue'))
 
     # Create LLM client instances with retry logic
-    # GOOGLE_API_KEY is already set in the environment by this script
     from google.adk.models.registry import LLMRegistry
     base_llm = LLMRegistry.new_llm(MODEL)
+
     from utils.agent_retry import RetryableGeminiLlm
     retryable_llm_client = RetryableGeminiLlm(model=MODEL)
 
@@ -81,10 +82,10 @@ async def async_main():
         instruction=(
         "You are the primary assistant orchestrating a team of expert agents to fulfill user requests regarding companies and stock performance.\n"
         "Responsibilities:\n"
-        "1. Provide comprehensive reports on companies when requested.\n"
-        "2. For stock price or market trend insights, delegate to 'agent_stock_analysis'.\n"
-        "3. For general or real-time information, delegate to 'agent_search_google'.\n"
-        "Carefully interpret the user’s intent, decide whether to handle the request directly or delegate it, and respond accordingly.\n"
+        "If the input query is short, assume it's a stock-related question.\n"
+        "1. For stock price or market trend insights, delegate to 'agent_stock_analysis'. If an exact matching symbol isn't found, provide the three best matches you considered and then provide a reason for choosing the best one out of them.\n"
+        "2. For general or real-time information, delegate to 'agent_search_google'.\n"
+        "Carefully interpret the user's intent, decide whether to handle the request directly or delegate it, and respond accordingly.\n"
         "When uncertain, ask the user for clarification. Only use tools or delegate tasks as defined."
     ),
         sub_agents=[agent_search_google, agent_analyze_stock],
@@ -101,14 +102,45 @@ async def async_main():
 
     print(colored(text=">> Running agent...", color='blue'))
     events_async = runner.run_async(session_id=session.id, user_id=session.user_id, new_message=content)
-
+    
+    # Counter for API calls
+    api_call_count = 0
+    
     async for event in events_async:
+        # Track API calls by checking for model responses
+        if hasattr(event, 'content') and event.content and hasattr(event.content, 'role') and event.content.role == 'model':
+            api_call_count += 1
+            
+            # Determine the source (which agent is making the call)
+            source = event.author if hasattr(event, 'author') else "unknown"
+            
+            # Determine the destination (what the call is for)
+            destination = "unknown"
+            if event.content.parts and len(event.content.parts) > 0:
+                part = event.content.parts[0]
+                if hasattr(part, 'function_call') and part.function_call:
+                    destination = f"function: {part.function_call.name}"
+                elif hasattr(part, 'text') and part.text:
+                    destination = "text response"
+                else:
+                    # Check if this is the final response
+                    if event.is_final_response():
+                        destination = "final response"
+            
+            # Print the API call information in orange
+            print(colored(text=f">> API Call #{api_call_count}: {source} -> {destination}", color='yellow'))
+            
         if event.is_final_response():
             if event.content and event.content.parts:
                 final_response_text = event.content.parts[0].text
             elif event.actions and event.actions.escalate:
                 final_response_text = f">> agent error: {event.error_message or 'No specific message.'}"
             print(colored(text=f"{'*'*50}\n\n{final_response_text}", color='green'))
+            # Print the total number of API calls
+            print(colored(text=f"\n{'='*50}", color='yellow'))
+            print(colored(text=f">> API Call Summary:", color='yellow'))
+            print(colored(text=f">> Total API calls: {api_call_count}", color='yellow'))
+            print(colored(text=f"{'='*50}", color='yellow'))
             break
         else:
             print(event)
