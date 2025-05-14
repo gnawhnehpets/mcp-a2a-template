@@ -5,11 +5,11 @@ from google.adk import Agent, Runner
 from google.adk.artifacts import InMemoryArtifactService
 from google.adk.sessions import InMemorySessionService
 from google.genai import types
-from google.generativeai import GenerativeModel # For type hinting if needed
+from google.generativeai import GenerativeModel
 
 from tools.mcp_tool_stocks import return_sse_mcp_tools_stocks
 from tools.mcp_tool_search import return_sse_mcp_tools_search
-from agents.tools.mcp_tool_health_check import return_sse_mcp_tools_health_check # Import new health check tool
+from tools.mcp_tool_health_check import return_sse_mcp_tools_health_check
 
 from termcolor import colored
 
@@ -48,7 +48,7 @@ async def async_main():
     print(colored(text=">> Initializing tools from MCP servers...", color='blue'))
     search_tools, search_exit_stack = await return_sse_mcp_tools_search()
     stocks_tools, stocks_exit_stack = await return_sse_mcp_tools_stocks()
-    health_check_tools, health_check_exit_stack = await return_sse_mcp_tools_health_check() # Initialize health check tool
+    health_check_tools, health_check_exit_stack = await return_sse_mcp_tools_health_check()
 
     print(colored(text=">> Initializing agents...", color='blue'))
 
@@ -91,8 +91,8 @@ async def async_main():
             "Carefully interpret the user’s intent for step 2, decide whether to handle it directly or delegate, and respond accordingly.\n"
             "When uncertain about step 2, ask the user for clarification. Only use tools or delegate tasks as defined."
         ),
-        tools=health_check_tools.tools, # Add health check tool to root agent
-        sub_agents=[agent_search_google, agent_analyze_stock], # Keep existing sub-agents
+        tools=health_check_tools.tools,
+        sub_agents=[agent_search_google, agent_analyze_stock],
         output_key="last_assistant_response",
     )
 
