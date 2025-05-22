@@ -17,7 +17,7 @@ from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
 
 from pathlib import Path
-ROOT_DIR = Path(__file__).resolve().parents[1]
+ROOT_DIR = Path(__file__).resolve().parents[1]  # This is correct for this file since it's one level deeper than the tools
 
 MCP_SERVER_DIR = ROOT_DIR / "mcp_server" / "stdio"
 SEARCH_SCRIPT = MCP_SERVER_DIR / "mcp_stdio_search_google.py"
@@ -89,10 +89,10 @@ async def async_main():
             "    b. For stock price or market trend insights, delegate to 'agent_stock_analysis'.\n"
             "    c. For general or real-time information, delegate to 'agent_search_google'.\n"
             "3. **Formulate Final Response:** Consolidate all information. If the 'perform_mental_health_check' tool indicated a concern, its supportive message MUST be included prominently and respectfully at the BEGINNING of your overall response. Then, provide the answer to the user's primary request based on step 2.\n"
-            "Carefully interpret the user’s intent for step 2, decide whether to handle it directly or delegate, and respond accordingly.\n"
+            "Carefully interpret the user's intent for step 2, decide whether to handle it directly or delegate, and respond accordingly.\n"
             "When uncertain about step 2, ask the user for clarification. Only use tools or delegate tasks as defined."
         ),
-        tools=health_check_tools.tools,
+        tools=health_check_tools,
         sub_agents=[agent_search_google, agent_analyze_stock],
         output_key="last_assistant_response",
     )
@@ -152,9 +152,26 @@ async def async_main():
 
 
     print(colored(text=">> Closing MCP server connection...", color='blue'))
-    await stocks_exit_stack.aclose()
-    await search_exit_stack.aclose()
-    await health_check_exit_stack.aclose() # Close health check exit stack
+    # Use try-except blocks to handle potential errors during connection cleanup
+    try:
+        await stocks_exit_stack.aclose()
+        print(colored(text=">> Stocks connection closed", color='blue'))
+    except Exception as e:
+        print(colored(text=f">> Warning: Error closing stocks connection: {e}", color='yellow'))
+    
+    try:
+        await search_exit_stack.aclose()
+        print(colored(text=">> Search connection closed", color='blue'))
+    except Exception as e:
+        print(colored(text=f">> Warning: Error closing search connection: {e}", color='yellow'))
+    
+    try:
+        await health_check_exit_stack.aclose()
+        print(colored(text=">> Health check connection closed", color='blue'))
+    except Exception as e:
+        print(colored(text=f">> Warning: Error closing health check connection: {e}", color='yellow'))
+    
+    print(colored(text=">> All connections processed", color='blue'))
 
 
 if __name__ == '__main__':

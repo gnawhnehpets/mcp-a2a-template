@@ -5,19 +5,10 @@ from dotenv import load_dotenv, find_dotenv
 
 load_dotenv(find_dotenv())
 
-# Ensure GOOGLE_API_KEY is available if any tool initialization within MCPToolset needs it,
-# though typically the server itself handles API key usage.
-# This is more of a safeguard or for consistency with other tool files.
-if os.getenv("API_KEY_GOOGLE"):
-    os.environ["GOOGLE_API_KEY"] = os.getenv("API_KEY_GOOGLE")
-else:
-    # Depending on strictness, could raise an error or just print a warning
-    print("Warning: API_KEY_GOOGLE not found in .env for mcp_tool_health_check.py, though likely not directly used here.")
+os.environ["GOOGLE_API_KEY"] = os.getenv("API_KEY_GOOGLE")
 
 from pathlib import Path
-ROOT_DIR = Path(__file__).resolve().parents[1]
-# VENV_PYTHON = ROOT_DIR / ".venv" / "bin" / "python3" # Not directly used for SSE server connection
-# MCP_SHTTP_HEALTH_CHECK_SCRIPT = ROOT_DIR / "mcp_server" / "shttp" / "mcp_shttp_health_check.py" # Not directly used for SSE server connection
+ROOT_DIR = Path(__file__).resolve().parents[2]
 
 HEALTH_CHECK_SERVER_URL = os.getenv("HEALTH_CHECK_MCP_URL", "http://localhost:8182/sse")
 
@@ -46,8 +37,8 @@ if __name__ == '__main__':
     async def test_connection():
         print("Attempting to connect to Health Check MCP server for testing...")
         health_tools, health_stack = await return_sse_mcp_tools_health_check()
-        if health_tools.tools:
-            print(f"Successfully connected. Tools available: {[tool.function_declarations[0].name for tool in health_tools.tools]}")
+        if health_tools:
+            print(f"Successfully connected. Tools available: {[tool.function_declarations[0].name for tool in health_tools]}")
         else:
             print("Connection attempt finished, but no tools were loaded. Check server status and URL.")
         await health_stack.aclose()
