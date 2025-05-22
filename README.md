@@ -76,6 +76,8 @@ To run the MCP server and client code, you can use the following command:
 ```bash
 PYTHONPATH=. python3 mcp_server/shttp/mcp_shttp_search_google.py
 PYTHONPATH=. python3 mcp_server/shttp/mcp_shttp_lookup_stock.py
+PYTHONPATH=. python3 mcp_server/shttp/mcp_shttp_agent_health_check.py
+```
 # In a separate terminal, run the client code
 python3 agents/mcp_shttp_agent_search_multiple.py 
 ```
