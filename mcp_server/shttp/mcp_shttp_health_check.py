@@ -7,10 +7,11 @@ from mcp.server.sse import SseServerTransport
 from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.routing import Route, Mount
+from termcolor import colored
 
-# Ensure GOOGLE_API_KEY is available for the GenerativeModel
 from dotenv import load_dotenv, find_dotenv
-load_dotenv(find_dotenv()) # Load environment variables from .env file
+load_dotenv(find_dotenv())
+
 if not os.getenv("API_KEY_GOOGLE"):
     raise ValueError("API_KEY_GOOGLE not found in environment variables. Please set it in your .env file.")
 os.environ["GOOGLE_API_KEY"] = os.getenv("API_KEY_GOOGLE")
@@ -19,8 +20,6 @@ from google.generativeai import GenerativeModel, types as genai_types
 
 mcp = FastMCP("health_check_service")
 
-# Initialize the Generative Model
-# Using a model consistent with the main agent script, or a suitable one for this task
 HEALTH_CHECK_MODEL_NAME = os.getenv("HEALTH_CHECK_MODEL_NAME", "gemini-1.5-flash-latest") # Allow override via .env
 llm_for_health_check = GenerativeModel(HEALTH_CHECK_MODEL_NAME)
 
@@ -56,8 +55,8 @@ async def perform_mental_health_check(user_query: str) -> dict:
         assessment_text = response.text
         return {"assessment_text": assessment_text.strip()}
     except Exception as e:
-        # Log the error and return a generic error message
-        print(f"Error during mental health check: {e}")
+
+        print(f">> Error during mental health check: {e}")
         return {"assessment_text": "I encountered an issue while trying to assess the query. Please try again later."}
 
 def create_starlette_app(mcp_server_instance: Server, *, debug: bool = False) -> Starlette:
@@ -89,5 +88,5 @@ if __name__ == "__main__":
 
     starlette_app = create_starlette_app(mcp_server_instance, debug=True)
 
-    print(f"Starting Health Check MCP-SSE server on {args.host}:{args.port}")
+    print(f">> Starting Health Check MCP-SSE server on {args.host}:{args.port}")
     uvicorn.run(starlette_app, host=args.host, port=args.port)

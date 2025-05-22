@@ -17,7 +17,7 @@ from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
 
 from pathlib import Path
-ROOT_DIR = Path(__file__).resolve().parents[1]  # This is correct for this file since it's one level deeper than the tools
+ROOT_DIR = Path(__file__).resolve().parents[1]
 
 MCP_SERVER_DIR = ROOT_DIR / "mcp_server" / "stdio"
 SEARCH_SCRIPT = MCP_SERVER_DIR / "mcp_stdio_search_google.py"
@@ -42,7 +42,6 @@ async def async_main():
         session_id=SESSION_ID
     )
 
-    # Color the query prompt
     query = input(colored(text=">> Enter your query:\n", color='magenta'))
     content = types.Content(role='user', parts=[types.Part(text=query)])
 
@@ -53,7 +52,6 @@ async def async_main():
 
     print(colored(text=">> Initializing agents...", color='blue'))
 
-    # Create LLM client instances with retry logic
     from google.adk.models.registry import LLMRegistry
     base_llm = LLMRegistry.new_llm(MODEL)
 
@@ -61,7 +59,7 @@ async def async_main():
     retryable_llm_client = RetryableGeminiLlm(model=MODEL)
 
     agent_analyze_stock = Agent(
-        model=MODEL, # Use the model name directly
+        model=MODEL,
         name="agent_stock_analysis",
         instruction="Perform in-depth analysis of stock data and return key financial insights, including the latest market price.",
         description="Specializes in analyzing stock market data and generating financial insights. Retrieves and reports on the most recent stock prices.",
@@ -69,7 +67,7 @@ async def async_main():
     )
 
     agent_search_google = Agent(
-        model=MODEL, # Use the model name directly
+        model=MODEL,
         name="agent_search_google",
         instruction="First, use 'search_google' to find relevant web pages for the user's query. If initial search results are sufficient, summarize them. If more detail is needed, use 'get_page_text' on the most promising URLs (up to 2-3 pages). Consolidate all gathered information into a single, comprehensive answer. Avoid making separate responses for each piece of information. Your goal is to provide a complete answer in one go after gathering and processing all necessary information.",
         description="Handles open-ended queries by performing Google searches, reading content from web pages, and synthesizing the information.",
@@ -79,7 +77,7 @@ async def async_main():
     # Create the root agent with sub-agents; delegates tasks to the appropriate sub-agent based on user query
     root_agent = Agent(
         name=APP_NAME,
-        model=MODEL, # Use the model name directly
+        model=MODEL,
         description="Root assistant: Handles requests about stocks, company information, and user well-being by first performing a mental health check.",
         instruction=(
             "You are the primary assistant orchestrating a team of expert agents. Your process for EVERY user query is:\n"
@@ -108,18 +106,14 @@ async def async_main():
     print(colored(text=">> Running agent...", color='blue'))
     events_async = runner.run_async(session_id=session.id, user_id=session.user_id, new_message=content)
     
-    # Counter for API calls
     api_call_count = 0
     
     async for event in events_async:
-        # Track API calls by checking for model responses
         if hasattr(event, 'content') and event.content and hasattr(event.content, 'role') and event.content.role == 'model':
             api_call_count += 1
             
-            # Determine the source (which agent is making the call)
             source = event.author if hasattr(event, 'author') else "unknown"
             
-            # Determine the destination (what the call is for)
             destination = "unknown"
             if event.content.parts and len(event.content.parts) > 0:
                 part = event.content.parts[0]
@@ -128,11 +122,9 @@ async def async_main():
                 elif hasattr(part, 'text') and part.text:
                     destination = "text response"
                 else:
-                    # Check if this is the final response
                     if event.is_final_response():
                         destination = "final response"
             
-            # Print the API call information in orange
             print(colored(text=f">> API Call #{api_call_count}: {source} -> {destination}", color='yellow'))
             
         if event.is_final_response():
@@ -141,7 +133,6 @@ async def async_main():
             elif event.actions and event.actions.escalate:
                 final_response_text = f">> agent error: {event.error_message or 'No specific message.'}"
             print(colored(text=f"{'*'*50}\n\n{final_response_text}", color='green'))
-            # Print the total number of API calls
             print(colored(text=f"\n{'='*50}", color='yellow'))
             print(colored(text=f">> API Call Summary:", color='yellow'))
             print(colored(text=f">> Total API calls: {api_call_count}", color='yellow'))
@@ -152,7 +143,6 @@ async def async_main():
 
 
     print(colored(text=">> Closing MCP server connection...", color='blue'))
-    # Use try-except blocks to handle potential errors during connection cleanup
     try:
         await stocks_exit_stack.aclose()
         print(colored(text=">> Stocks connection closed", color='blue'))
