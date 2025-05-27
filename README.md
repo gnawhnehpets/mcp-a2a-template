@@ -9,7 +9,7 @@ This is where **MCP** and **A2A** come in.
 
 ---
 
-## 🔌 Model Context Protocol (MCP)
+## Model Context Protocol (MCP)
 
 MCP is an open standard introduced by [Anthropic](https://www.anthropic.com/news/model-context-protocol) that acts like a USB-C port for language models. It standardizes how models interface with:
 - Filesystems and cloud storage
@@ -24,7 +24,7 @@ MCP supports two transport layers:
 
 ---
 
-## 🧠 Agent2Agent Protocol (A2A)
+## Agent2Agent Protocol (A2A)
 
 A2A is a protocol developed by [Google](https://developers.googleblog.com/en/a2a-a-new-era-of-agent-interoperability) that enables AI agents to:
 - Discover each other via public “Agent Cards”
@@ -37,7 +37,7 @@ A2A solves the problem of vendor lock-in and fragile, one-off integrations betwe
 
 ---
 
-## 🎯 Why It Matters for Agentic AI & RAG
+## Why It Matters for Agentic AI & RAG
 
 Together, **MCP** and **A2A** offer a foundation for building sophisticated agentic systems capable of:
 - **Retrieval-Augmented Generation (RAG)** with external memory and context
@@ -76,7 +76,10 @@ To run the MCP server and client code, you can use the following command:
 ```bash
 PYTHONPATH=. python3 mcp_server/shttp/mcp_shttp_search_google.py
 PYTHONPATH=. python3 mcp_server/shttp/mcp_shttp_lookup_stock.py
-PYTHONPATH=. python3 mcp_server/shttp/mcp_shttp_agent_health_check.py
+PYTHONPATH=. python3 mcp_server/shttp/mcp_shttp_health_check.py
+docker run --rm -i \
+  -e MDB_MCP_CONNECTION_STRING="mongodb+srv://username:password@cluster.mongodb.net/myDatabase" \
+  mongodb/mongodb-mcp-server:latest
 ```
 # In a separate terminal, run the client code
 python3 agents/mcp_shttp_agent_search_multiple.py 
