@@ -60,6 +60,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     starlette_app = create_starlette(mcp_server, debug=True)
-
+    
+    print(f">> Starting Stock Lookup MCP-SSE server on {args.host}:{args.port}")
     uvicorn.run(starlette_app, host=args.host, port=args.port)
 
