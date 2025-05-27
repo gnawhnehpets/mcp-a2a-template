@@ -9,7 +9,7 @@ from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
 
 # https://github.com/Finnhub-Stock-API/finnhub-python
-class FinnHubService:
+class StockServiceFinnhub:
     def __init__(self):
         """ init finnhub service """
         self.client = finnhub.Client(api_key=os.getenv("API_KEY_FINNHUB"))
@@ -42,6 +42,6 @@ class FinnHubService:
          }
 
 if __name__ == "__main__":
-    service = FinnHubService()
+    service = StockServiceFinnhub()
     print(json.dumps(service.symbol_lookup("mongodb"), indent=2))
     print(json.dumps(service.get_symbol_quote("QQQM"), indent=2, default=str))
