@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  google_search:
+    build:
+      context: ../../ # Context is the project root
+      dockerfile: mcp_server/shttp/Dockerfile # Path to Dockerfile relative to context
+    command: python mcp_server/shttp/mcp_shttp_search_google.py --host 0.0.0.0 --port 8080
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../../.env:/app/.env # Mount .env file from project root
+    environment:
+      - PYTHONPATH=/app
+    restart: unless-stopped
+    networks:
+      - mcp_network
+
+  stock_lookup:
+    build:
+      context: ../../
+      dockerfile: mcp_server/shttp/Dockerfile
+    command: python mcp_server/shttp/mcp_shttp_lookup_stock.py --host 0.0.0.0 --port 8181
+    ports:
+      - "8181:8181"
+    volumes:
+      - ../../.env:/app/.env
+    environment:
+      - PYTHONPATH=/app
+    restart: unless-stopped
+    networks:
+      - mcp_network
+
+  health_check:
+    build:
+      context: ../../
+      dockerfile: mcp_server/shttp/Dockerfile
+    command: python mcp_server/shttp/mcp_shttp_health_check.py --host 0.0.0.0 --port 8182
+    ports:
+      - "8182:8182"
+    volumes:
+      - ../../.env:/app/.env
+    environment:
+      - PYTHONPATH=/app
+    restart: unless-stopped
+    networks:
+      - mcp_network
+
+  agent_api_service:
+    build:
+      context: ../../ # Context is the project root
+      dockerfile: mcp_server/shttp/Dockerfile # Path to Dockerfile relative to context
+    command: uvicorn api.agent_service:app --host 0.0.0.0 --port 8000 --workers 1
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../../.env:/app/.env # Mount .env file from project root
+      # If your api code is not copied by the Dockerfile's COPY . . from root, ensure it's mounted
+      # Assuming api/ is part of the COPY . . in Dockerfile from project root context
+    environment:
+      - PYTHONPATH=/app # Also add for the API service for consistency
+    restart: unless-stopped
+    networks:
+      - mcp_network
+    depends_on:
+      - google_search
+      - stock_lookup
+      - health_check
+
+networks:
+  mcp_network:
+    driver: bridge

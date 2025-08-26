@@ -1,10 +1,10 @@
 import uvicorn
-from mcp.server import Server
-from mcp.server.fastmcp import FastMCP
-from mcp.server.sse import SseServerTransport
+# from mcp.server import Server # Underlying server type, if needed by transport
+from fastmcp import FastMCP # Changed
+from fastmcp.server.transports import StreamableHttpServerTransport # Hypothetical
 from starlette.applications import Starlette
 from starlette.requests import Request
-from starlette.routing import Route, Mount
+from starlette.routing import Route
 
 from services.stock.service_stock_finhub import StockServiceFinnhub
 
@@ -30,37 +30,37 @@ def get_stock_price(symbol: str) -> dict:
     """
     return finnhub_service.get_symbol_quote(symbol)
 
-def create_starlette(mcp_server: Server, *, debug: bool = False) -> Starlette:
+def create_starlette(fast_mcp_instance: FastMCP, *, debug: bool = False) -> Starlette: # Changed
     """
-    Create startlette app to serve the MCP server with SSE
-    :param mcp_server: mcp server to serve
+    Create starlette app to serve the FastMCP server with Streamable HTTP
+    :param fast_mcp_instance: The FastMCP instance
     :param debug: enable debug mode
     :return: app
     """
-    shttp = SseServerTransport("/messages/")
+    mcp_server_to_run = fast_mcp_instance._mcp_server 
+    transport = StreamableHttpServerTransport()
 
-    async def handle_shttp(request: Request) -> None:
-        async with shttp.connect_sse(request.scope, request.receive, request._send) \
-        as (read_stream, write_stream):
-            await mcp_server.run(read_stream, write_stream, mcp_server.create_initialization_options() )
+    async def stream_mcp_endpoint(request: Request):
+        return await transport.handle_request(request, mcp_server_to_run)
 
     return Starlette(
         debug=debug,
-        routes=[Route("/sse", endpoint=handle_shttp), Mount("/messages/", app=shttp.handle_post_message)])
-
+        routes=[
+            Route("/mcp", endpoint=stream_mcp_endpoint, methods=["POST"]) # New endpoint
+        ]
+    )
 
 if __name__ == "__main__":
-    mcp_server = mcp._mcp_server
+    fast_mcp_instance = mcp # mcp is the FastMCP instance
 
     import argparse
 
-    parser = argparse.ArgumentParser(description='Run MCP-SSE server')
+    parser = argparse.ArgumentParser(description='Run FastMCP Streamable HTTP server for Stocks') # Updated
     parser.add_argument('--host', default='0.0.0.0', help='Host to bind to')
     parser.add_argument('--port', type=int, default=8181, help='Port to listen on')
     args = parser.parse_args()
 
-    starlette_app = create_starlette(mcp_server, debug=True)
+    starlette_app = create_starlette(fast_mcp_instance, debug=True)
     
-    print(f">> Starting Stock Lookup MCP-SSE server on {args.host}:{args.port}")
+    print(f">> Starting Stock Lookup FastMCP Streamable HTTP server on {args.host}:{args.port}") # Updated
     uvicorn.run(starlette_app, host=args.host, port=args.port)
-

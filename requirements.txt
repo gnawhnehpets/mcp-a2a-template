@@ -1,6 +1,8 @@
 finnhub-python
 google-adk
-mcp
+fastmcp
 python-dotenv
 termcolor
 google-generativeai
+fastapi
+uvicorn[standard]

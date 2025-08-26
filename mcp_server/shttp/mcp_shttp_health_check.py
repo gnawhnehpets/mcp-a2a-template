@@ -1,17 +1,18 @@
 import uvicorn
 import os
 import argparse
-from mcp.server import Server
-from mcp.server.fastmcp import FastMCP
-from mcp.server.sse import SseServerTransport
+# from mcp.server import Server # Underlying server type
+from fastmcp import FastMCP # Changed
+from fastmcp.server.transports import StreamableHttpServerTransport # Hypothetical
 from starlette.applications import Starlette
 from starlette.requests import Request
-from starlette.routing import Route, Mount
+from starlette.routing import Route
 from termcolor import colored
 
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
 
+# API_KEY_GOOGLE is for the health check's LLM, not directly related to MCP transport
 if not os.getenv("API_KEY_GOOGLE"):
     raise ValueError("API_KEY_GOOGLE not found in environment variables. Please set it in your .env file.")
 os.environ["GOOGLE_API_KEY"] = os.getenv("API_KEY_GOOGLE")
@@ -59,34 +60,35 @@ async def perform_mental_health_check(user_query: str) -> dict:
         print(f">> Error during mental health check: {e}")
         return {"assessment_text": "I encountered an issue while trying to assess the query. Please try again later."}
 
-def create_starlette_app(mcp_server_instance: Server, *, debug: bool = False) -> Starlette:
+def create_starlette_app(fast_mcp_instance: FastMCP, *, debug: bool = False) -> Starlette: # Changed
     """
-    Create starlette app to serve the MCP server with SSE
-    :param mcp_server_instance: mcp server to serve
+    Create starlette app to serve the FastMCP server with Streamable HTTP
+    :param fast_mcp_instance: The FastMCP instance
     :param debug: enable debug mode
     :return: app
     """
-    shttp = SseServerTransport("/messages/")
+    mcp_server_to_run = fast_mcp_instance._mcp_server
+    transport = StreamableHttpServerTransport()
 
-    async def handle_shttp(request: Request) -> None:
-        async with shttp.connect_sse(request.scope, request.receive, request._send) \
-        as (read_stream, write_stream):
-            await mcp_server_instance.run(read_stream, write_stream, mcp_server_instance.create_initialization_options())
+    async def stream_mcp_endpoint(request: Request):
+        return await transport.handle_request(request, mcp_server_to_run)
 
     return Starlette(
         debug=debug,
-        routes=[Route("/sse", endpoint=handle_shttp), Mount("/messages/", app=shttp.handle_post_message)])
-
+        routes=[
+            Route("/mcp", endpoint=stream_mcp_endpoint, methods=["POST"]) # New endpoint
+        ]
+    )
 
 if __name__ == "__main__":
-    mcp_server_instance = mcp._mcp_server
+    fast_mcp_instance = mcp # mcp is the FastMCP instance
 
-    parser = argparse.ArgumentParser(description='Run MCP-SSE Health Check Server')
+    parser = argparse.ArgumentParser(description='Run FastMCP Streamable HTTP Health Check Server') # Updated
     parser.add_argument('--host', default='0.0.0.0', help='Host to bind to')
     parser.add_argument('--port', type=int, default=8182, help='Port to listen on (default: 8182 for health check)')
     args = parser.parse_args()
 
-    starlette_app = create_starlette_app(mcp_server_instance, debug=True)
+    starlette_app = create_starlette_app(fast_mcp_instance, debug=True)
 
-    print(f">> Starting Health Check MCP-SSE server on {args.host}:{args.port}")
+    print(f">> Starting Health Check FastMCP Streamable HTTP server on {args.host}:{args.port}") # Updated
     uvicorn.run(starlette_app, host=args.host, port=args.port)
